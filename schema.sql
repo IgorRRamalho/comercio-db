@@ -1,7 +1,9 @@
--- Criação do esquema de banco de dados para um pequeno comércio (Livraria/Cafeteria)
+-- Atualização do script da base (v1.1)
+-- Pequenos ajustes no modelo da livraria/cafeteria
 
--- 1. Tabela de Produtos
--- Armazena informações sobre os itens disponíveis para venda.
+-- =========================================
+-- Produtos
+-- =========================================
 CREATE TABLE Produtos (
     produto_id INT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
@@ -10,8 +12,13 @@ CREATE TABLE Produtos (
     estoque INT NOT NULL DEFAULT 0
 );
 
--- 2. Tabela de Pedidos
--- Armazena informações sobre os pedidos feitos pelos clientes.
+-- Adicionei categoria e flag de ativo pra melhorar o controle
+ALTER TABLE Produtos ADD categoria VARCHAR(50) DEFAULT 'Geral';
+ALTER TABLE Produtos ADD ativo BOOLEAN DEFAULT TRUE;
+
+-- =========================================
+-- Pedidos
+-- =========================================
 CREATE TABLE Pedidos (
     pedido_id INT PRIMARY KEY,
     data_pedido DATE NOT NULL,
@@ -19,8 +26,12 @@ CREATE TABLE Pedidos (
     status VARCHAR(50) NOT NULL DEFAULT 'Pendente'
 );
 
--- 3. Tabela de Itens_Pedido (Tabela de relacionamento N:M entre Produtos e Pedidos)
--- Armazena os detalhes de quais produtos estão em quais pedidos.
+-- Mudei o tamanho do campo status só pra deixar mais padrão
+ALTER TABLE Pedidos MODIFY status VARCHAR(30) NOT NULL DEFAULT 'Pendente';
+
+-- =========================================
+-- Itens do Pedido
+-- =========================================
 CREATE TABLE Itens_Pedido (
     item_pedido_id INT PRIMARY KEY,
     pedido_id INT NOT NULL,
@@ -31,79 +42,86 @@ CREATE TABLE Itens_Pedido (
     FOREIGN KEY (produto_id) REFERENCES Produtos(produto_id)
 );
 
--- Inserção de dados de exemplo
-
--- Inserir pelo menos 3 registros na tabela Produtos
+-- =========================================
+-- Dados iniciais
+-- =========================================
 INSERT INTO Produtos (produto_id, nome, descricao, preco, estoque) VALUES
 (1, 'Café Expresso', 'Grãos selecionados, torra média.', 5.50, 150),
 (2, 'Livro: O Guia do Mochileiro das Galáxias', 'Ficção científica clássica.', 45.90, 50),
 (3, 'Bolo de Cenoura', 'Fatia de bolo caseiro com cobertura de chocolate.', 12.00, 30);
 
--- Inserir pelo menos 3 registros na tabela Pedidos
 INSERT INTO Pedidos (pedido_id, data_pedido, valor_total, status) VALUES
 (101, '2025-11-03', 57.90, 'Concluído'),
 (102, '2025-11-03', 12.00, 'Pendente'),
 (103, '2025-11-02', 45.90, 'Enviado');
 
--- Inserir dados na tabela Itens_Pedido para relacionar Produtos e Pedidos
 INSERT INTO Itens_Pedido (item_pedido_id, pedido_id, produto_id, quantidade, preco_unitario) VALUES
-(1, 101, 1, 2, 5.50),    -- 2 Cafés Expresso no Pedido 101
-(2, 101, 2, 1, 45.90),   -- 1 Livro no Pedido 101
-(3, 102, 3, 1, 12.00),   -- 1 Bolo de Cenoura no Pedido 102
-(4, 103, 2, 1, 45.90);   -- 1 Livro no Pedido 103
+(1, 101, 1, 2, 5.50),
+(2, 101, 2, 1, 45.90),
+(3, 102, 3, 1, 12.00),
+(4, 103, 2, 1, 45.90);
 
--- Exemplo de consulta (opcional, mas útil para demonstrar o relacionamento)
--- SELECT
---     P.pedido_id,
---     P.data_pedido,
---     P.status,
---     PR.nome AS nome_produto,
---     IP.quantidade,
---     IP.preco_unitario
--- FROM Pedidos P
--- JOIN Itens_Pedido IP ON P.pedido_id = IP.pedido_id
--- JOIN Produtos PR ON IP.produto_id = PR.produto_id
--- WHERE P.pedido_id = 101;
+-- =========================================
+-- Novas inserções e ajustes
+-- =========================================
+-- Adicionei um novo produto e um pedido só pra testar
+INSERT INTO Produtos (produto_id, nome, descricao, preco, estoque, categoria) VALUES
+(4, 'Cappuccino', 'Bebida cremosa com leite vaporizado e canela.', 8.90, 80, 'Bebidas');
 
+INSERT INTO Pedidos (pedido_id, data_pedido, valor_total, status) VALUES
+(104, CURRENT_DATE, 8.90, 'Concluído');
 
--- Operações de Manipulação de Dados (CRUD)
+INSERT INTO Itens_Pedido (item_pedido_id, pedido_id, produto_id, quantidade, preco_unitario)
+VALUES (5, 104, 4, 1, 8.90);
 
--- 1. Consultas (SELECT)
+-- Atualizei o estoque do livro porque chegou mais unidades
+UPDATE Produtos
+SET estoque = estoque + 20
+WHERE nome = 'Livro: O Guia do Mochileiro das Galáxias';
 
--- Consulta 1: Listar todos os produtos com estoque maior que 50
-SELECT nome, preco, estoque
+-- =========================================
+-- Consultas rápidas
+-- =========================================
+
+-- Produtos com bom estoque
+SELECT nome, categoria, preco, estoque
 FROM Produtos
-WHERE estoque > 50;
+WHERE estoque > 50
+ORDER BY categoria, nome;
 
--- Consulta 2: Calcular o valor total de um pedido específico (ex: pedido_id = 101)
+-- Resumo geral dos pedidos
 SELECT
     P.pedido_id,
     P.data_pedido,
+    P.status,
     SUM(IP.quantidade * IP.preco_unitario) AS valor_calculado
 FROM Pedidos P
 JOIN Itens_Pedido IP ON P.pedido_id = IP.pedido_id
-WHERE P.pedido_id = 101
-GROUP BY P.pedido_id, P.data_pedido;
+GROUP BY P.pedido_id, P.data_pedido, P.status
+ORDER BY P.data_pedido DESC;
 
--- Consulta 3: Listar todos os pedidos feitos no dia de hoje (2025-11-03)
+-- Pedidos do dia atual
 SELECT pedido_id, valor_total, status
 FROM Pedidos
-WHERE data_pedido = '2025-11-03';
+WHERE data_pedido = CURRENT_DATE;
 
--- 2. Atualização (UPDATE)
-
--- Atualização 1: Aumentar o preço do "Café Expresso" em 10%
+-- =========================================
+-- Updates pontuais
+-- =========================================
 UPDATE Produtos
 SET preco = preco * 1.10
-WHERE nome = 'Café Expresso';
+WHERE nome = 'Café Expresso'; -- aumentei 10%
 
--- Atualização 2: Mudar o status do Pedido 102 para 'Processando'
 UPDATE Pedidos
 SET status = 'Processando'
 WHERE pedido_id = 102;
 
--- 3. Remoção (DELETE)
+-- Marquei o bolo como inativo ao invés de deletar
+UPDATE Produtos
+SET ativo = FALSE
+WHERE nome = 'Bolo de Cenoura';
 
--- Remoção 1: Remover um produto que está fora de linha (ex: Bolo de Cenoura - produto_id = 3)          
+-- =========================================
+-- Delete (só se precisar limpar algum vínculo)
+-- =========================================
 DELETE FROM Itens_Pedido WHERE produto_id = 3;
-DELETE FROM Produtos WHERE produto_id = 3;
