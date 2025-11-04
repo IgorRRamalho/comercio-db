@@ -64,3 +64,46 @@ INSERT INTO Itens_Pedido (item_pedido_id, pedido_id, produto_id, quantidade, pre
 -- JOIN Itens_Pedido IP ON P.pedido_id = IP.pedido_id
 -- JOIN Produtos PR ON IP.produto_id = PR.produto_id
 -- WHERE P.pedido_id = 101;
+
+
+-- Operações de Manipulação de Dados (CRUD)
+
+-- 1. Consultas (SELECT)
+
+-- Consulta 1: Listar todos os produtos com estoque maior que 50
+SELECT nome, preco, estoque
+FROM Produtos
+WHERE estoque > 50;
+
+-- Consulta 2: Calcular o valor total de um pedido específico (ex: pedido_id = 101)
+SELECT
+    P.pedido_id,
+    P.data_pedido,
+    SUM(IP.quantidade * IP.preco_unitario) AS valor_calculado
+FROM Pedidos P
+JOIN Itens_Pedido IP ON P.pedido_id = IP.pedido_id
+WHERE P.pedido_id = 101
+GROUP BY P.pedido_id, P.data_pedido;
+
+-- Consulta 3: Listar todos os pedidos feitos no dia de hoje (2025-11-03)
+SELECT pedido_id, valor_total, status
+FROM Pedidos
+WHERE data_pedido = '2025-11-03';
+
+-- 2. Atualização (UPDATE)
+
+-- Atualização 1: Aumentar o preço do "Café Expresso" em 10%
+UPDATE Produtos
+SET preco = preco * 1.10
+WHERE nome = 'Café Expresso';
+
+-- Atualização 2: Mudar o status do Pedido 102 para 'Processando'
+UPDATE Pedidos
+SET status = 'Processando'
+WHERE pedido_id = 102;
+
+-- 3. Remoção (DELETE)
+
+-- Remoção 1: Remover um produto que está fora de linha (ex: Bolo de Cenoura - produto_id = 3)
+DELETE FROM Itens_Pedido WHERE produto_id = 3;
+DELETE FROM Produtos WHERE produto_id = 3;
