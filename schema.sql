@@ -104,6 +104,6 @@ WHERE pedido_id = 102;
 
 -- 3. Remoção (DELETE)
 
--- Remoção 1: Remover um produto que está fora de linha (ex: Bolo de Cenoura - produto_id = 3)
+-- Remoção 1: Remover um produto que está fora de linha (ex: Bolo de Cenoura - produto_id = 3)          
 DELETE FROM Itens_Pedido WHERE produto_id = 3;
 DELETE FROM Produtos WHERE produto_id = 3;
